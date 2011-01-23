@@ -57,6 +57,7 @@ class HelpersTest < ActionController::TestCase
   test 'does not issue blank flash messages' do
     MyController.send(:public, :set_flash_message)
     I18n.stubs(:t).returns('   ')
+    @controller.stubs(:is_navigational_format? => true)
     @controller.set_flash_message :notice, :send_instructions
     assert flash[:notice].nil?
     MyController.send(:protected, :set_flash_message)
@@ -65,8 +66,25 @@ class HelpersTest < ActionController::TestCase
   test 'issues non-blank flash messages normally' do
     MyController.send(:public, :set_flash_message)
     I18n.stubs(:t).returns('non-blank')
+    @controller.stubs(:is_navigational_format? => true)
     @controller.set_flash_message :notice, :send_instructions
     assert flash[:notice] == 'non-blank'
     MyController.send(:protected, :set_flash_message)
+  end
+
+  test 'does not set flash message if the request is not navigational format' do
+    MyController.send(:public, :set_flash_message)
+    I18n.stubs(:t).returns('non-blank')
+    @controller.stubs(:is_navigational_format? => false)
+    @controller.set_flash_message :notice, :send_instructions
+    assert_nil flash[:notice]
+    MyController.send(:protected, :set_flash_message)
+  end
+
+  test 'navigational_formats not returning a wild card' do
+    MyController.send(:public, :navigational_formats)
+    Devise.navigational_formats = [:"*/*", :html]
+    assert_not @controller.navigational_formats.include?(:"*/*")
+    MyController.send(:protected, :navigational_formats)
   end
 end

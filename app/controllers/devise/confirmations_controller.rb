@@ -13,9 +13,11 @@ class Devise::ConfirmationsController < ApplicationController
 
     if resource.errors.empty?
       set_flash_message :notice, :send_instructions
-      redirect_to new_session_path(resource_name)
+      respond_with resource, :location => new_session_path(resource_name)
     else
-      render_with_scope :new
+      respond_with(resource) do |format|
+        format.any(*navigational_formats) { render_with_scope :new }
+      end
     end
   end
 
@@ -25,9 +27,14 @@ class Devise::ConfirmationsController < ApplicationController
 
     if resource.errors.empty?
       set_flash_message :notice, :confirmed
-      sign_in_and_redirect(resource_name, resource)
+      sign_in(resource_name, resource)
+      respond_with(resource) do |format|
+        format.any(*navigational_formats) { redirect_to redirect_location(resource_name, resource) }
+      end
     else
-      render_with_scope :new
+      respond_with(resource.errors, :status => :unprocessable_entity) do |format|
+        format.any(*navigational_formats) { render_with_scope :new }
+      end
     end
   end
 end

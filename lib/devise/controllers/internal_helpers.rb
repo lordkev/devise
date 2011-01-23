@@ -17,6 +17,10 @@ module Devise
 
         prepend_before_filter :is_devise_resource?
         respond_to *Mime::SET.map(&:to_sym) if mimes_for_respond_to.empty?
+
+        Devise.routes_prepare do
+          skip_before_filter *Devise.mappings.keys.map { |m| :"authenticate_#{m}!" }
+        end
       end
 
       # Gets the actual resource stored in the instance variable
@@ -59,7 +63,12 @@ module Devise
 
       # Check whether it's navigational format, such as :html or :iphone, or not.
       def is_navigational_format?
-        Devise.navigational_formats.include?(request.format.to_sym)
+        navigational_formats.include?(request.format.to_sym)
+      end
+
+      # Returns real navigational formats which supported by Rails
+      def navigational_formats
+        @navigational_formats ||= Devise.navigational_formats.select{ |format| Mime::EXTENSION_LOOKUP[format.to_s] }
       end
 
       def unknown_action!(msg)
@@ -104,11 +113,13 @@ module Devise
       # Please refer to README or en.yml locale file to check what messages are
       # available.
       def set_flash_message(key, kind, options={}) #:nodoc:
-        options[:scope] = "devise.#{controller_name}"
-        options[:default] = Array(options[:default]).unshift(kind.to_sym)
-        options[:resource_name] = resource_name
-        message = I18n.t("#{resource_name}.#{kind}", options)
-        flash[key] = message if message.present?
+        if is_navigational_format?
+          options[:scope] = "devise.#{controller_name}"
+          options[:default] = Array(options[:default]).unshift(kind.to_sym)
+          options[:resource_name] = resource_name
+          message = I18n.t("#{resource_name}.#{kind}", options)
+          flash[key] = message if message.present?
+        end
       end
 
       def clean_up_passwords(object) #:nodoc:
