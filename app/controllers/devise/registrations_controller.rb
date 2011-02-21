@@ -1,7 +1,7 @@
 class Devise::RegistrationsController < ApplicationController
   prepend_before_filter :require_no_authentication, :only => [ :new, :create, :cancel ]
   prepend_before_filter :authenticate_scope!, :only => [:edit, :update, :destroy]
-  (skip_before_filter :verify_authenticity_token) if non_navigational_format_requested?
+  skip_before_filter :verify_authenticity_token, :if => :non_navigational_format_requested
   
   include Devise::Controllers::InternalHelpers
 
