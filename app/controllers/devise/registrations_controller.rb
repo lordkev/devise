@@ -1,7 +1,7 @@
 class Devise::RegistrationsController < ApplicationController
   prepend_before_filter :require_no_authentication, :only => [ :new, :create, :cancel ]
   prepend_before_filter :authenticate_scope!, :only => [:edit, :update, :destroy]
-  (skip_before_filter :verify_authenticity_token) if non_navigational_format_requested
+  (skip_before_filter :verify_authenticity_token) if non_navigational_format_requested?
   
   include Devise::Controllers::InternalHelpers
 
@@ -118,7 +118,7 @@ class Devise::RegistrationsController < ApplicationController
       self.resource = resource_class.to_adapter.get!(send(:"current_#{resource_name}").to_key)
     end
     
-    # Disables CSRF protection if a non-navigational format response was requested
+    # Determine if non navigational format was requested
     def non_navigational_format_requested
       request.format.to_sym == :xml or request.format.to_sym == :json
     end
