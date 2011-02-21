@@ -1,6 +1,8 @@
 class Devise::RegistrationsController < ApplicationController
   prepend_before_filter :require_no_authentication, :only => [ :new, :create, :cancel ]
   prepend_before_filter :authenticate_scope!, :only => [:edit, :update, :destroy]
+  prepend_before_filter :disable_csrf_for_non_navigational_formats
+  
   include Devise::Controllers::InternalHelpers
 
   # GET /resource/sign_up
@@ -114,5 +116,12 @@ class Devise::RegistrationsController < ApplicationController
     def authenticate_scope!
       send(:"authenticate_#{resource_name}!", true)
       self.resource = resource_class.to_adapter.get!(send(:"current_#{resource_name}").to_key)
+    end
+    
+    # Disables CSRF protection if a non-navigational format response was requested
+    def disable_csrf_for_non_navigational_formats
+      if request.format.to_sym == :xml or request.format.to_sym == :json
+        skip_before_filter :verify_authenticity_token
+      end
     end
 end
